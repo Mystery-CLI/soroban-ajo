@@ -4,6 +4,7 @@ import { useWalletBalance } from '../hooks/useWalletBalance'
 import { BalanceDisplay } from './BalanceDisplay'
 import { fundWithFriendbot, getAddFundsUrl, IS_TESTNET } from '../services/soroban'
 import { formatXLMCompact, formatRelativeTime, truncateAddress } from '../utils/formatters'
+import { detectWallets } from '../utils/walletDetection'
 
 type Tab = 'balance' | 'transactions'
 
@@ -40,26 +41,29 @@ export const WalletConnector: React.FC = () => {
 
   const menuRef = useRef<HTMLDivElement>(null)
 
+  // Detect wallets using comprehensive detection
+  const walletDetection = detectWallets()
+
   // Available wallets
   const availableWallets = [
     {
       name: 'Freighter',
       provider: 'freighter' as const,
-      isInstalled: typeof window !== 'undefined' && !!(window as any).freighterApi,
+      isInstalled: walletDetection.freighter,
       icon: '🚀',
       description: 'Browser extension',
     },
     {
       name: 'LOBSTR',
       provider: 'lobstr' as const,
-      isInstalled: typeof window !== 'undefined' && (!!(window as any).lobstrVault || !!(window as any).lobstr),
+      isInstalled: walletDetection.lobstr,
       icon: '🦞',
       description: 'Mobile app or Vault extension',
     },
     {
       name: 'Albedo',
       provider: 'albedo' as const,
-      isInstalled: typeof window !== 'undefined' && !!(window as any).albedo,
+      isInstalled: walletDetection.albedo,
       icon: '⭐',
       description: 'Web-based wallet',
     },

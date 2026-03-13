@@ -1,30 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { detectWallets, getWindowWalletInfo, debugWalletDetection } from '@/utils/walletDetection';
 
 export default function TestWalletModalPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string>('');
+  const [detection, setDetection] = useState<any>(null);
+  const [windowInfo, setWindowInfo] = useState<any>(null);
+
+  useEffect(() => {
+    // Run detection
+    const result = detectWallets();
+    setDetection(result);
+    
+    const info = getWindowWalletInfo();
+    setWindowInfo(info);
+    
+    // Log to console for debugging
+    debugWalletDetection();
+  }, []);
 
   const availableWallets = [
     {
       name: 'Freighter',
       provider: 'freighter',
-      isInstalled: typeof window !== 'undefined' && !!(window as any).freighterApi,
+      isInstalled: detection?.freighter || false,
       icon: '🚀',
       description: 'Browser extension',
     },
     {
       name: 'LOBSTR',
       provider: 'lobstr',
-      isInstalled: typeof window !== 'undefined' && (!!(window as any).lobstrVault || !!(window as any).lobstr),
+      isInstalled: detection?.lobstr || false,
       icon: '🦞',
       description: 'Mobile app or Vault extension',
     },
     {
       name: 'Albedo',
       provider: 'albedo',
-      isInstalled: typeof window !== 'undefined' && !!(window as any).albedo,
+      isInstalled: detection?.albedo || false,
       icon: '⭐',
       description: 'Web-based wallet',
     },
@@ -55,6 +70,51 @@ export default function TestWalletModalPage() {
             ))}
           </div>
         </div>
+
+        {/* Detection Details */}
+        {detection && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Detection Details
+            </h2>
+            <div className="space-y-2 text-xs font-mono">
+              {Object.entries(detection.details).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                  <span className="text-gray-600 dark:text-gray-400">window.{key}</span>
+                  <span className={value ? 'text-green-600' : 'text-gray-400'}>
+                    {value ? '✓ Found' : '✗ Not found'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Window Info */}
+        {windowInfo && Object.keys(windowInfo).length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Available Wallet APIs
+            </h2>
+            <div className="space-y-3">
+              {Object.entries(windowInfo).map(([key, info]: [string, any]) => (
+                <div key={key} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <div className="font-semibold text-gray-900 dark:text-white mb-1">
+                    window.{key}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    Type: {info.type}
+                  </div>
+                  {info.methods && info.methods.length > 0 && (
+                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Methods: {info.methods.join(', ')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <button
           onClick={() => setShowModal(true)}
