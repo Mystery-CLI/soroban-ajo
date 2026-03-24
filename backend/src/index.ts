@@ -14,14 +14,16 @@ import { jobsRouter } from './routes/jobs'
 import { gamificationRouter } from './routes/gamification'
 import { goalsRouter } from './routes/goals'
 import { setupSwagger } from './swagger'
-import { apiLimiter, strictLimiter } from './middleware/rateLimiter'
 import { startWorkers, stopWorkers } from './jobs/jobWorkers'
 import { startScheduler, stopScheduler } from './cron/scheduler'
 import { kycRouter } from './routes/kyc'
 import { disputesRouter } from './routes/disputes'
 
-// New Monitoring Imports
-import healthRouter from './routes/health' // Consolidated default import
+// Use the working limiters instead of the broken upstream ones
+import { apiLimiter, strictLimiter } from './middleware/rateLimiter'
+
+// Our Feature: Monitoring & Health
+import { healthRouter } from './routes/health'
 import { metricsMiddleware } from './middleware/metrics'
 
 dotenv.config()
@@ -29,7 +31,7 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// 1. Security & Basic Middleware
+// Middleware
 app.use(helmet())
 app.use(
   cors({
@@ -40,23 +42,19 @@ app.use(
   })
 )
 
-// 2. Observability Middleware (Must be placed before routes)
 app.use(requestLogger)
-app.use(metricsMiddleware) // Tracks duration and count for all subsequent requests
+app.use(metricsMiddleware)
+app.set('trust proxy', 1)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use('/api', apiLimiter)
-app.set('trust proxy', 1)
 
-// API Documentation
+// API Documentation - Swagger UI
 setupSwagger(app)
 
-// 3. Health & Metrics Routes
-// Mounted at '/' because internal paths are /health, /health/live, and /metrics
+// Routes
 app.use('/', healthRouter)
-
-// 4. Feature Routes
 app.use('/api/auth', strictLimiter, authRouter)
 app.use('/api/groups', groupsRouter)
 app.use('/api/webhooks', strictLimiter, webhooksRouter)

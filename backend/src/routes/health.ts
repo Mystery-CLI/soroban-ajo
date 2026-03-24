@@ -1,10 +1,19 @@
-// backend/src/routes/health.ts
 import { Router } from 'express';
 import { HealthCheckService } from '../services/healthCheck';
 import { register } from '../services/metricsService';
 
 const router = Router();
 const healthCheck = new HealthCheckService();
+
+// Upstream addition: Base route
+router.get('/', (_req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'ajo-backend',
+    version: '0.1.0'
+  });
+});
 
 // Liveness probe (is the app running?)
 router.get('/health/live', (req, res) => {
@@ -30,4 +39,4 @@ router.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 
-export default router;
+export const healthRouter = router;
