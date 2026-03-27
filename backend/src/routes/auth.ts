@@ -1,10 +1,11 @@
-import { Router, Request, Response } from 'express'
-import { prisma } from '../config/database'
-import { authenticate, AuthRequest } from '../middleware/auth'
+import { AuthRequest, authenticate } from '../middleware/auth'
+import { Request, Response, Router } from 'express'
+import { generateTokenSchema, twoFactorVerificationSchema } from '../schemas/auth.schema'
+
 import { AuthService } from '../services/authService'
+import { prisma } from '../config/database'
 import { totpService } from '../services/totpService'
 import { validateRequest } from '../middleware/validateRequest'
-import { generateTokenSchema, twoFactorVerificationSchema } from '../schemas/auth.schema'
 
 const router = Router()
 

@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useRef } from 'react'
-import { create } from 'zustand'
-import { authService, AuthError } from '../services/authService'
-import { analytics, trackUserAction } from '../services/analytics'
 import type {
-  AuthState,
   AuthActions,
   AuthSession,
+  AuthState,
   LoginParams,
   StellarNetwork,
   WalletProvider,
 } from '../types/auth'
+import { AuthError, authService } from '../services/authService'
+import { analytics, trackUserAction } from '../services/analytics'
+import { useCallback, useEffect, useRef } from 'react'
+
+import { create } from 'zustand'
 
 type AuthStore = AuthState & AuthActions
 

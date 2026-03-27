@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import { stellarPublicKeySchema } from './common.schema'
+import { z } from 'zod'
 
 export const generateTokenSchema = z.object({
   publicKey: stellarPublicKeySchema,

@@ -1,10 +1,10 @@
 import type {
-  AuthTokenResponse,
   AuthSession,
-  StoredSession,
+  AuthTokenResponse,
   SessionConfig,
-  TokenPair,
   StellarNetwork,
+  StoredSession,
+  TokenPair,
   TwoFactorRequiredResponse,
   TwoFactorSetupResponse,
   TwoFactorStatusResponse,
@@ -12,15 +12,15 @@ import type {
   WalletSignatureResult,
 } from '../types/auth'
 import {
-  ensureFreighterAllowed,
-  getStellarNetworkFromFreighter,
-  waitForFreighterApi,
-} from '@/utils/freighter'
-import {
   connectLobstrVault,
   isMobileDevice,
   isValidStellarAddress as validateLobstrAddress,
 } from '@/utils/lobstr'
+import {
+  ensureFreighterAllowed,
+  getStellarNetworkFromFreighter,
+  waitForFreighterApi,
+} from '@/utils/freighter'
 
 const DEFAULT_CONFIG: SessionConfig = {
   sessionDuration: 30 * 60 * 1000,
