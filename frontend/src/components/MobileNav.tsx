@@ -1,43 +1,15 @@
 'use client'
 
-/**
- * MobileNav
- *
- * Mobile navigation (hidden on lg+). Consists of:
- * - A floating action button (FAB) fixed to the bottom-right
- * - A slide-up drawer with glassmorphism background
- * - A semi-transparent backdrop that closes the drawer on click
- *
- * Keyboard: Escape closes the drawer. Focus is trapped inside while open.
- */
-
-import React, { useRef, useEffect } from 'react'
-import Link from 'next/link'
-import { useNavigation } from '@/hooks/useNavigation'
-import { WalletConnector } from './WalletConnector'
-import { NotificationBell } from './NotificationBell'
-
-interface NavItem {
-  href: string
-  label: string
-  icon: string
-  dataTour?: string
-  badge?: number | string
-}
+import React, { useState, useEffect, useRef } from 'react'
 
 interface MobileNavProps {
   navItems: NavItem[]
 }
 
-export const MobileNav: React.FC<MobileNavProps> = ({ navItems }) => {
-  const { isSidebarOpen, toggleSidebar, closeSidebar, isActive } = useNavigation()
-  const drawerRef = useRef<HTMLDivElement>(null)
-  const fabRef = useRef<HTMLButtonElement>(null)
-
-  // Return focus to FAB when drawer closes
-  useEffect(() => {
-    if (!isSidebarOpen) fabRef.current?.focus()
-  }, [isSidebarOpen])
+export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate }) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const menuRef = useRef<HTMLElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   // Trap focus inside drawer
   useEffect(() => {
@@ -49,17 +21,35 @@ export const MobileNav: React.FC<MobileNavProps> = ({ navItems }) => {
     const last = focusable[focusable.length - 1]
     first?.focus()
 
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return
-      if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first?.focus() }
-      }
+  const handleNavigate = (view: string) => {
+    onNavigate?.(view)
+    setIsOpen(false)
+    // Return focus to trigger after close
+    triggerRef.current?.focus()
+  }
+
+  const handleClose = () => {
+    setIsOpen(false)
+    triggerRef.current?.focus()
+  }
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose()
     }
-    document.addEventListener('keydown', handleTab)
-    return () => document.removeEventListener('keydown', handleTab)
-  }, [isSidebarOpen])
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
+  // Focus first menu item when opened
+  useEffect(() => {
+    if (isOpen) {
+      const firstBtn = menuRef.current?.querySelector<HTMLButtonElement>('button')
+      firstBtn?.focus()
+    }
+  }, [isOpen])
 
   return (
     <div className="lg:hidden">
@@ -160,83 +150,56 @@ export const MobileNav: React.FC<MobileNavProps> = ({ navItems }) => {
 
       {/* Floating Action Button */}
       <button
-        ref={fabRef}
-        onClick={toggleSidebar}
-        aria-expanded={isSidebarOpen}
-        aria-controls="mobile-nav-drawer"
-        aria-label={isSidebarOpen ? 'Close navigation' : 'Open navigation'}
-        className={[
-          'fixed bottom-6 right-5 z-50',
-          'w-14 h-14 rounded-full',
-          'bg-gradient-to-br from-primary-500 to-accent-500',
-          'shadow-xl shadow-primary-500/40',
-          'flex items-center justify-center',
-          'transition-all duration-300',
-          'active:scale-95 hover:scale-105 hover:shadow-glow-md',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
-          isSidebarOpen ? 'rotate-45' : 'rotate-0',
-        ].join(' ')}
+        ref={triggerRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={isOpen}
+        aria-controls="mobile-nav-menu"
       >
-        {isSidebarOpen ? (
-          /* X icon */
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          /* Hamburger icon */
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        )}
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          {isOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
       </button>
 
-      {/* Bottom quick-nav bar (always visible on mobile) */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-30 lg:hidden"
-        aria-label="Quick navigation"
-      >
-        <div className="flex items-center justify-around bg-white/90 dark:bg-surface-900/90 supports-[backdrop-filter]:backdrop-blur-xl border-t border-surface-100/60 dark:border-white/10 px-2 pb-safe pt-2">
-          {navItems.slice(0, 4).map((item) => {
-            const active = isActive(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? 'page' : undefined}
-                aria-label={item.label}
-                className={[
-                  'flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl min-w-[3rem]',
-                  'transition-all duration-200 outline-none',
-                  'focus-visible:ring-2 focus-visible:ring-primary-500',
-                  active ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500',
-                ].join(' ')}
-              >
-                <svg
-                  className={[
-                    'w-5 h-5 transition-transform duration-200',
-                    active ? 'scale-110' : '',
-                  ].join(' ')}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+      {/* Mobile Menu Overlay */}
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={handleClose}
+            aria-hidden="true"
+          />
+          <nav
+            id="mobile-nav-menu"
+            ref={menuRef}
+            className="fixed top-16 left-0 right-0 bg-white shadow-lg z-50 p-4"
+            aria-label="Mobile navigation"
+          >
+            <div className="space-y-2">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigate(item.id)}
+                  aria-current={currentView === item.id ? 'page' : undefined}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    currentView === item.id
+                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2.5 : 2} d={item.icon} />
-                </svg>
-                <span className="text-[10px] font-medium leading-none">{item.label}</span>
-                {active && (
-                  <span className="w-1 h-1 rounded-full bg-primary-500" aria-hidden="true" />
-                )}
-              </Link>
-            )
-          })}
-          {/* Notifications shortcut */}
-          <div className="flex flex-col items-center gap-1 px-3 py-1.5">
-            <NotificationBell />
-            <span className="text-[10px] font-medium text-surface-400 dark:text-surface-500 leading-none">Alerts</span>
-          </div>
-        </div>
-      </nav>
+                  <span aria-hidden="true" className="text-xl">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
+        </>
+      )}
     </div>
   )
 }

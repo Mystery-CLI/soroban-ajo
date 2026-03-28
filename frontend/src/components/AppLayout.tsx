@@ -18,6 +18,7 @@ import { MobileNav } from './MobileNav'
 import { NotificationHistory } from './NotificationHistory'
 import Onboarding from './Onboarding'
 import TourGuide from './TourGuide'
+import { ThemeToggle } from './ThemeToggle'
 import { useOnboarding } from '@/hooks/useOnboarding'
 
 interface AppLayoutProps {
@@ -73,8 +74,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   }, [hasCompletedOnboarding, pathname, startOnboarding])
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950 transition-colors duration-300">
-      {/* ── Skip links ─────────────────────────────────────────────── */}
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg-primary transition-colors duration-300">
+      {/* Skip Links */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none"
@@ -88,22 +89,76 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         Skip to navigation
       </a>
 
-      {/* ── Desktop floating sidebar ────────────────────────────────── */}
-      <FloatingSidebar navItems={NAV_ITEMS} />
+      {/* Header */}
+      <header className="bg-white dark:bg-dark-bg-secondary shadow-sm border-b border-gray-200 dark:border-dark-border sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <Link href="/" className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-indigo-400">
+                🪙 Ajo
+              </h1>
+              <span className="hidden sm:inline text-gray-600 dark:text-slate-400 text-sm">
+                Decentralized Savings
+              </span>
+            </Link>
 
-      {/* ── Mobile navigation ──────────────────────────────────────── */}
-      <MobileNav navItems={NAV_ITEMS} />
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <NotificationBell />
+              <NotificationHistory />
+              <div data-tour="wallet-connect">
+                <WalletConnector />
+              </div>
+            </div>
+          </div>
 
-      {/* ── Page wrapper ───────────────────────────────────────────── */}
-      {/*
-        On desktop: left margin = sidebar width (256px / w-64) + gap (16px left + 16px right = 32px) + 16px extra = 288px
-        On mobile: bottom padding for the quick-nav bar (~64px)
-      */}
-      <div className="lg:ml-[288px] flex flex-col min-h-screen">
-        {/* Slim top bar on desktop (notifications only — wallet lives in sidebar) */}
-        <div className="hidden lg:flex items-center justify-end gap-3 px-6 pt-5 pb-2">
-          <NotificationHistory />
+          {/* Navigation */}
+          <nav
+            id="navigation"
+            className="flex gap-1 -mb-px overflow-x-auto"
+            aria-label="Main navigation"
+          >
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  data-tour={link.dataTour}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={link.label}
+                  className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    isActive
+                      ? 'border-blue-600 dark:border-indigo-400 text-blue-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:border-gray-300 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d={link.icon}
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">{link.label}</span>
+                </Link>
+              )
+            })}
+          </nav>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
 
         {/* Main content */}
         <main
@@ -114,61 +169,85 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           {children}
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-surface-200 dark:border-surface-800 bg-white/60 dark:bg-surface-900/60 supports-[backdrop-filter]:backdrop-blur-sm mt-auto">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div>
-                <h3 className="font-bold text-surface-900 dark:text-surface-100 mb-3">Ajo</h3>
-                <p className="text-surface-500 dark:text-surface-400 text-sm">
-                  Decentralized savings groups powered by Stellar blockchain.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-bold text-surface-900 dark:text-surface-100 mb-3">Resources</h3>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    { href: '/docs', label: 'Documentation' },
-                    { href: '/community', label: 'Community' },
-                    { href: 'https://stellar.org', label: 'Stellar Network', external: true },
-                  ].map(({ href, label, external }) => (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        target={external ? '_blank' : undefined}
-                        rel={external ? 'noopener noreferrer' : undefined}
-                        className="text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                      >
-                        {label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-bold text-surface-900 dark:text-surface-100 mb-3">Connect</h3>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    { href: 'https://github.com', label: 'GitHub' },
-                    { href: 'https://twitter.com', label: 'Twitter' },
-                    { href: 'https://discord.com', label: 'Discord' },
-                  ].map(({ href, label }) => (
-                    <li key={href}>
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                      >
-                        {label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+      {/* Footer */}
+      <footer className="bg-white dark:bg-dark-bg-secondary border-t border-gray-200 dark:border-dark-border mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-3">Ajo</h3>
+              <p className="text-gray-600 dark:text-slate-400 text-sm">
+                Decentralized savings groups powered by Stellar blockchain.
+              </p>
             </div>
-            <div className="mt-8 pt-6 border-t border-surface-200 dark:border-surface-800 text-center text-sm text-surface-400 dark:text-surface-500">
-              <p>&copy; {new Date().getFullYear()} Ajo. All rights reserved.</p>
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-3">Resources</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link
+                    href="/docs"
+                    className="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-indigo-400"
+                  >
+                    Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/community"
+                    className="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-indigo-400"
+                  >
+                    Community
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="https://stellar.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Stellar Network (opens in new tab)"
+                    className="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-indigo-400"
+                  >
+                    Stellar Network
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-3">Connect</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a
+                    href="https://github.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="GitHub (opens in new tab)"
+                    className="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-indigo-400"
+                  >
+                    GitHub
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://twitter.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Twitter (opens in new tab)"
+                    className="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-indigo-400"
+                  >
+                    Twitter
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://discord.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Discord (opens in new tab)"
+                    className="text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-indigo-400"
+                  >
+                    Discord
+                  </a>
+                </li>
+              </ul>
             </div>
           </div>
         </footer>
